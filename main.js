@@ -1,13 +1,11 @@
-//* HTML elemek
-const $time = document.querySelector(".js-time");
-const $startBtn = document.querySelector(".js-startBtn");
-const $stopBtn = document.querySelector(".js-stopBtn");
-const $resetBtn = document.querySelector(".js-resetBtn");
+//* - Closure
+//* - Immutabilitás
+//* - Pure function
+//* - Higher Order Function
 
-//* változók
-const initTime = 2 * 60;
-let time = initTime;
-let intervalId = null;
+//* HTML elemek
+const $form = document.querySelector("form");
+const $app = document.querySelector("#app");
 
 //* segédfüggvények
 function formatTime(sec) {
@@ -22,47 +20,119 @@ function formatTime(sec) {
   return `${minutes}:${seconds}`;
 }
 
-//* render
-function renderTime() {
-  $time.innerHTML = formatTime(time);
+function state(initValue) {
+  function decrement(current) {
+    if (current > 0) {
+      return current - 1;
+    } else {
+      return 0;
+    }
+  }
+
+  function reset() {
+    return initValue;
+  }
+
+  return { decrement, reset };
 }
 
-//* eseményfigyelők
-function handleStart() {
-  if (!intervalId && time > 0) {
-    function start() {
-      if (time === 0) {
-        clearInterval(intervalId);
-      } else {
-        time--;
-        renderTime();
+function createCounterElement(container, onStart, onStop, onReset) {
+  // Ez felelős a DOM részért
+  const app = document.createElement("div"); // alkalmazás
+  const time = document.createElement("h2"); // idő értékét jeleníti meg
+  const wrapper = document.createElement("div");
+  const startBtn = document.createElement("button");
+  const stopBtn = document.createElement("button");
+  const resetBtn = document.createElement("button");
+
+  app.className = "timer";
+
+  startBtn.innerText = "start";
+  stopBtn.innerText = "stop";
+  resetBtn.innerText = "reset";
+
+  wrapper.appendChild(startBtn);
+  wrapper.appendChild(stopBtn);
+  wrapper.appendChild(resetBtn);
+
+  app.appendChild(time);
+  app.appendChild(wrapper);
+
+  container.appendChild(app);
+
+  startBtn.addEventListener("click", onStart);
+  stopBtn.addEventListener("click", onStop);
+  resetBtn.addEventListener("click", onReset);
+
+  function render(currentTime) {
+    time.innerText = currentTime;
+  }
+
+  return { render };
+}
+
+function counter(initValue, container) {
+  // ez felelős az app életéért
+  const counterState = state(initValue);
+
+  let intervalId = null;
+  let currentTime = initValue;
+
+  function handleStart() {
+    if (!intervalId && currentTime > 0) {
+      function start() {
+        currentTime = counterState.decrement(currentTime);
+
+        htmlElement.render(formatTime(currentTime));
+
+        if (currentTime === 0) {
+          clearInterval(intervalId);
+        }
       }
+
+      intervalId = setInterval(start, 1000);
+    }
+  }
+
+  function handleStop() {
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
+    }
+  }
+
+  function handleReset() {
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
     }
 
-    intervalId = setInterval(start, 1000);
-  }
-}
-
-function handleStop() {
-  if (intervalId) {
-    clearInterval(intervalId);
-    intervalId = null;
-  }
-}
-
-function handleReset() {
-  if (intervalId) {
-    clearInterval(intervalId);
-    intervalId = null;
+    currentTime = counterState.reset();
+    htmlElement.render(formatTime(currentTime));
   }
 
-  time = initTime;
-  renderTime();
+  const htmlElement = createCounterElement(
+    container,
+    handleStart,
+    handleStop,
+    handleReset
+  );
+  htmlElement.render(formatTime(initValue));
 }
 
-$startBtn.addEventListener("click", handleStart);
-$stopBtn.addEventListener("click", handleStop);
-$resetBtn.addEventListener("click", handleReset);
+//* eseményfigyelő
+function handleSubmit(event) {
+  event.preventDefault();
 
-//* szügéseges függvényhívás
-renderTime();
+  const $min = event.target[0];
+  const $sec = event.target[1];
+
+  const initValue = Number($min.value * 60) + Number($sec.value);
+
+  counter(initValue, $app);
+
+  $min.value = "";
+  $sec.value = "";
+}
+
+$form.addEventListener("submit", handleSubmit);

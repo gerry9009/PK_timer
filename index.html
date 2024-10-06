@@ -9,14 +9,15 @@
   <body>
     <h1>Timer</h1>
 
-    <div class="timer">
-      <h2 class="js-time">0:00</h2>
+    <form>
       <div>
-        <button class="js-startBtn">Start</button>
-        <button class="js-stopBtn">Stop</button>
-        <button class="js-resetBtn">Reset</button>
+        <input type="number" min="0" placeholder="Minutes" />
+        <input type="number" min="0" placeholder="Seconds" />
       </div>
-    </div>
+      <button>Add</button>
+    </form>
+
+    <div id="app"></div>
 
     <script type="module" src="main.js"></script>
   </body>
